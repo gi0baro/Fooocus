@@ -160,6 +160,7 @@ with shared.gradio_root:
                         with gr.Row():
                             ip_images = []
                             ip_types = []
+                            ip_starts = []
                             ip_stops = []
                             ip_weights = []
                             ip_ctrls = []
@@ -171,7 +172,11 @@ with shared.gradio_root:
                                     ip_ctrls.append(ip_image)
                                     with gr.Column(visible=False) as ad_col:
                                         with gr.Row():
-                                            default_end, default_weight = flags.default_parameters[flags.default_ip]
+                                            default_start, default_end, default_weight = flags.default_parameters[flags.default_ip]
+
+                                            ip_start = gr.Slider(label='Start At', minimum=0.0, maximum=1.0, step=0.001, value=default_start)
+                                            ip_starts.append(ip_start)
+                                            ip_ctrls.append(ip_start)
 
                                             ip_stop = gr.Slider(label='Stop At', minimum=0.0, maximum=1.0, step=0.001, value=default_end)
                                             ip_stops.append(ip_stop)
@@ -185,7 +190,7 @@ with shared.gradio_root:
                                         ip_types.append(ip_type)
                                         ip_ctrls.append(ip_type)
 
-                                        ip_type.change(lambda x: flags.default_parameters[x], inputs=[ip_type], outputs=[ip_stop, ip_weight], queue=False, show_progress=False)
+                                        ip_type.change(lambda x: flags.default_parameters[x], inputs=[ip_type], outputs=[ip_start, ip_stop, ip_weight], queue=False, show_progress=False)
                                     ip_ad_cols.append(ad_col)
                         ip_advanced = gr.Checkbox(label='Advanced', value=False, container=False)
                         gr.HTML('* \"Image Prompt\" is powered by Fooocus Image Mixture Engine (v1.0.1). <a href="https://github.com/lllyasviel/Fooocus/discussions/557" target="_blank">\U0001F4D4 Document</a>')
@@ -193,11 +198,12 @@ with shared.gradio_root:
                         def ip_advance_checked(x):
                             return [gr.update(visible=x)] * len(ip_ad_cols) + \
                                 [flags.default_ip] * len(ip_types) + \
-                                [flags.default_parameters[flags.default_ip][0]] * len(ip_stops) + \
-                                [flags.default_parameters[flags.default_ip][1]] * len(ip_weights)
+                                [flags.default_parameters[flags.default_ip][0]] * len(ip_starts) + \
+                                [flags.default_parameters[flags.default_ip][1]] * len(ip_stops) + \
+                                [flags.default_parameters[flags.default_ip][2]] * len(ip_weights)
 
                         ip_advanced.change(ip_advance_checked, inputs=ip_advanced,
-                                           outputs=ip_ad_cols + ip_types + ip_stops + ip_weights,
+                                           outputs=ip_ad_cols + ip_types + ip_starts + ip_stops + ip_weights,
                                            queue=False, show_progress=False)
                     with gr.TabItem(label='Inpaint or Outpaint') as inpaint_tab:
                         with gr.Row():
