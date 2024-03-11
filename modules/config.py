@@ -209,7 +209,7 @@ def get_config_item_or_set_default(key, default_value, validator, disable_empty_
 
     if key not in visited_keys:
         visited_keys.append(key)
-    
+
     v = os.getenv(key)
     if v is not None:
         v = try_eval_env_var(v, expected_type)
@@ -512,6 +512,7 @@ default_controlnet_image_count = get_config_item_or_set_default(
     expected_type=int
 )
 default_ip_images = {}
+default_ip_start_ats = {}
 default_ip_stop_ats = {}
 default_ip_weights = {}
 default_ip_types = {}
@@ -531,8 +532,14 @@ for image_count in range(default_controlnet_image_count):
         expected_type=str
     )
 
-    default_end, default_weight = modules.flags.default_parameters[default_ip_types[image_count]]
+    default_start, default_end, default_weight = modules.flags.default_parameters[default_ip_types[image_count]]
 
+    default_ip_start_ats[image_count] = get_config_item_or_set_default(
+        key=f'default_ip_start_at_{image_count}',
+        default_value=default_start,
+        validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
+        expected_type=float
+    )
     default_ip_stop_ats[image_count] = get_config_item_or_set_default(
         key=f'default_ip_stop_at_{image_count}',
         default_value=default_end,
