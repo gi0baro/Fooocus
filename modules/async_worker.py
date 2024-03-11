@@ -213,11 +213,12 @@ def worker():
         cn_tasks = {x: [] for x in flags.ip_list}
         for _ in range(flags.controlnet_image_count):
             cn_img = args.pop()
+            cn_start = args.pop()
             cn_stop = args.pop()
             cn_weight = args.pop()
             cn_type = args.pop()
             if cn_img is not None:
-                cn_tasks[cn_type].append([cn_img, cn_stop, cn_weight])
+                cn_tasks[cn_type].append([cn_img, cn_start, cn_stop, cn_weight])
 
         outpaint_selections = [o.lower() for o in outpaint_selections]
         base_model_additional_loras = []
@@ -745,7 +746,7 @@ def worker():
 
         if 'cn' in goals:
             for task in cn_tasks[flags.cn_canny]:
-                cn_img, cn_stop, cn_weight = task
+                cn_img, cn_start, cn_stop, cn_weight = task
                 cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
                 if not skipping_cn_preprocessor:
@@ -757,7 +758,7 @@ def worker():
                     yield_result(async_task, cn_img, black_out_nsfw, do_not_show_finished_images=True)
                     return
             for task in cn_tasks[flags.cn_cpds]:
-                cn_img, cn_stop, cn_weight = task
+                cn_img, cn_start, cn_stop, cn_weight = task
                 cn_img = resize_image(HWC3(cn_img), width=width, height=height)
 
                 if not skipping_cn_preprocessor:
@@ -769,7 +770,7 @@ def worker():
                     yield_result(async_task, cn_img, black_out_nsfw, do_not_show_finished_images=True)
                     return
             for task in cn_tasks[flags.cn_ip]:
-                cn_img, cn_stop, cn_weight = task
+                cn_img, cn_start, cn_stop, cn_weight = task
                 cn_img = HWC3(cn_img)
 
                 # https://github.com/tencent-ailab/IP-Adapter/blob/d580c50a291566bbf9fc7ac0f760506607297e6d/README.md?plain=1#L75
@@ -780,7 +781,7 @@ def worker():
                     yield_result(async_task, cn_img, black_out_nsfw, do_not_show_finished_images=True)
                     return
             for task in cn_tasks[flags.cn_ip_face]:
-                cn_img, cn_stop, cn_weight = task
+                cn_img, cn_start, cn_stop, cn_weight = task
                 cn_img = HWC3(cn_img)
 
                 if not skipping_cn_preprocessor:
@@ -880,10 +881,10 @@ def worker():
                         (flags.cn_canny, controlnet_canny_path),
                         (flags.cn_cpds, controlnet_cpds_path)
                     ]:
-                        for cn_img, cn_stop, cn_weight in cn_tasks[cn_flag]:
+                        for cn_img, cn_start, cn_stop, cn_weight in cn_tasks[cn_flag]:
                             positive_cond, negative_cond = core.apply_controlnet(
                                 positive_cond, negative_cond,
-                                pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, 0, cn_stop)
+                                pipeline.loaded_ControlNets[cn_path], cn_img, cn_weight, cn_start, cn_stop)
 
                 imgs = pipeline.process_diffusion(
                     positive_cond=positive_cond,
